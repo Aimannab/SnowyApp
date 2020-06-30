@@ -96,12 +96,18 @@ class TutorialFragment : Fragment() {
 
         //Launch: Implementing methods on Dispatcher.Main - used for UI-related events
         coroutineScope.launch(Dispatchers.Main) {
+            //The green arrow in the next 2 lines indicate that these are suspension points
+
             //await() is a suspending function
             //await() suspends launch until the methods return a value
             //await() can only be called from withing a coroutine scope or another suspending function
-            //The green arrow in the next 2 lines indicate that these are suspension points
-            val originalBitmap = getOriginalBitmapAsync(tutorial).await()
-            val snowFilterBitmap = loadSnowFilterAsync(originalBitmap).await()
+//            val originalBitmap = getOriginalBitmapAsync(tutorial).await()
+//            val snowFilterBitmap = loadSnowFilterAsync(originalBitmap).await()
+
+            //No need to call await when using withContext
+            val originalBitmap = getOriginalBitmapAsync(tutorial)
+            val snowFilterBitmap = loadSnowFilterAsync(originalBitmap)
+
             loadImage(snowFilterBitmap)
         }
     }
@@ -113,19 +119,21 @@ class TutorialFragment : Fragment() {
         //Once a job is cancelled, it cannot be reused. Need to create a new one
     }
 
-    //Async: Gets executed on a worker thread
-    // Getting original bitmap on Dispatchers.IO - used for networking-related work
-    private fun getOriginalBitmapAsync(tutorial: Tutorial): Deferred<Bitmap> =
-        coroutineScope.async(Dispatchers.IO) {
+    //coroutineScope.async: Gets executed on a worker thread
+    //Getting original bitmap on Dispatchers.IO - used for networking-related work
+    //withContext: Instead of deferring the value, the functions are marked with suspend
+    private suspend fun getOriginalBitmapAsync(tutorial: Tutorial): Bitmap =
+        withContext(Dispatchers.IO) {
             URL(tutorial.url).openStream().use {
-                return@async BitmapFactory.decodeStream(it)
+                return@withContext BitmapFactory.decodeStream(it)
             }
         }
 
-    //Async: Gets executed on a worker thread
+    //coroutineScope.async: Gets executed on a worker thread
     //Applying snow effect filter on Dispatcher.Default - user for CPU-intensive work
-    private fun loadSnowFilterAsync(originalBitmap: Bitmap): Deferred<Bitmap> =
-        coroutineScope.async(Dispatchers.Default) {
+    //withContext: Instead of deferring the value, the functions are marked with suspend
+    private suspend fun loadSnowFilterAsync(originalBitmap: Bitmap): Bitmap =
+        withContext(Dispatchers.Default) {
             SnowFilter.applySnowEffect(originalBitmap)
         }
 
