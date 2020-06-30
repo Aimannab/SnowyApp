@@ -30,6 +30,8 @@
 
 package com.raywenderlich.snowy
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -37,9 +39,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.raywenderlich.snowy.model.Tutorial
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import com.raywenderlich.snowy.utils.SnowFilter
+import kotlinx.coroutines.*
+import java.net.URL
 
 class TutorialFragment : Fragment() {
 
@@ -72,4 +74,16 @@ class TutorialFragment : Fragment() {
     super.onViewCreated(view, savedInstanceState)
     val tutorial = arguments?.getParcelable(TUTORIAL_KEY) as Tutorial
   }
+
+  private fun getOriginalBitmapAsunc(tutorial: Tutorial) : Deferred<Bitmap> =
+    coroutineScope.async(Dispatchers.IO) {
+      URL(tutorial.url).openStream().use {
+        return@async BitmapFactory.decodeStream(it)
+      }
+    }
+
+  private fun loadSnowFilterAsync(originalBitmap: Bitmap) : Deferred<Bitmap> =
+    coroutineScope.async(Dispatchers.Default) {
+      SnowFilter.applySnowEffect(originalBitmap)
+    }
 }
