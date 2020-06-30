@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Snowy</string>
+    <string name="kotlin_title">Kotlin</string>
+    <string name="kotlin_url">https://koenig-media.raywenderlich.com/uploads/2019/01/Kotlin.png</string>
+    <string name="kotlin_desc">We all know Kotlin is just the best. Kotlin has both object-oriented and functional
+        constructs. It can be used for both client side applications and server side applications. Our site is rich of
+        Kotlin tutorials.
+        Do read them if you want to learn Kotlin :]
+    </string>
+    <string name="android_name">Android</string>
+    <string name="android_url">https://koenig-media.raywenderlich.com/uploads/2019/01/android_rw_flag_2.png</string>
+    <string name="android_desc">Android is a mobile operating system by Google. Development for android platform is even
+        more fun with Kotlin. We have an awesome lineup of Android Tutorials that too based on Kotlin. Enjoy.. :]
+    </string>
+    <string name="rxkotlin_name">RxKotlin</string>
+    <string name="rxkotlin_url">https://koenig-media.raywenderlich.com/uploads/2019/01/RxSwift.png</string>
+    <string name="rxkotlin_desc">The RxKotlin is an implementation of a Reactive Stream specification. Kotlin adds more
+        fun to reactive programming as it adds convenient extension functions to RxJava. Go ahead and have a look to our
+        Rx tutorial. :]
+    </string>
+    <string name="kitura_name">Kitura</string>
+    <string name="kitura_url">https://koenig-media.raywenderlich.com/uploads/2019/01/kitura.png</string>
+    <string name="kitura_desc">Kitura is a server-side Swift framework for building iOS backends and web applications.
+        This framework creates REST APIs that can be invoked from the iOS applications. We have Kitura tutorial too :]
+    </string>
+    <string name="error_message">Error while loading image.</string>
+</resources>
