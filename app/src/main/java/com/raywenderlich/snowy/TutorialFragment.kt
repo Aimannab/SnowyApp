@@ -57,12 +57,27 @@ class TutorialFragment : Fragment() {
             fragmentHome.arguments = args
             return fragmentHome
         }
-
-      //Initiating a parent job
-        private val parentJob = Job()
-      //Defining the scope with main thread and parent job
-        private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob)
     }
+
+    //Initiating a parent job
+    private val parentJob = Job()
+
+    // Defining coroutine exception handler to log exceptions
+    private val coroutineExceptionHandler: CoroutineExceptionHandler =
+        CoroutineExceptionHandler { _, throwable ->
+            //Creating a coroutine on the main thread to show error message on the UI
+            coroutineScope.launch(Dispatchers.Main) {
+                errorMessage.visibility = View.VISIBLE
+                errorMessage.text = getString(R.string.error_message)
+            }
+            //GlobeScope won't be destroyed with the UI, so exceptions can be logged here as well
+            GlobalScope.launch { println("Caught $throwable") }
+        }
+
+    //Defining the scope with main thread and parent job
+    //Any exceptions in a coroutine started, they will be logged and displayed in a text view
+    private val coroutineScope =
+        CoroutineScope(Dispatchers.Main + parentJob + coroutineExceptionHandler)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -79,20 +94,20 @@ class TutorialFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val tutorial = arguments?.getParcelable(TUTORIAL_KEY) as Tutorial
 
-      //Launch: Implementing methods on Dispatcher.Main - used for UI-related events
+        //Launch: Implementing methods on Dispatcher.Main - used for UI-related events
         coroutineScope.launch(Dispatchers.Main) {
-          //await() is a suspending function
-          //await() suspends launch until the methods return a value
-          //await() can only be called from withing a coroutine scope or another suspending function
-          //The green arrow in the next 2 lines indicate that these are suspension points
+            //await() is a suspending function
+            //await() suspends launch until the methods return a value
+            //await() can only be called from withing a coroutine scope or another suspending function
+            //The green arrow in the next 2 lines indicate that these are suspension points
             val originalBitmap = getOriginalBitmapAsync(tutorial).await()
             val snowFilterBitmap = loadSnowFilterAsync(originalBitmap).await()
             loadImage(snowFilterBitmap)
         }
     }
 
-  //Async: Gets executed on a worker thread
-  // Getting original bitmap on Dispatchers.IO - used for networking-related work
+    //Async: Gets executed on a worker thread
+    // Getting original bitmap on Dispatchers.IO - used for networking-related work
     private fun getOriginalBitmapAsync(tutorial: Tutorial): Deferred<Bitmap> =
         coroutineScope.async(Dispatchers.IO) {
             URL(tutorial.url).openStream().use {
@@ -100,14 +115,14 @@ class TutorialFragment : Fragment() {
             }
         }
 
-  //Async: Gets executed on a worker thread
-  //Applying snow effect filter on Dispatcher.Default - user for CPU-intensive work
+    //Async: Gets executed on a worker thread
+    //Applying snow effect filter on Dispatcher.Default - user for CPU-intensive work
     private fun loadSnowFilterAsync(originalBitmap: Bitmap): Deferred<Bitmap> =
         coroutineScope.async(Dispatchers.Default) {
             SnowFilter.applySnowEffect(originalBitmap)
         }
 
-  //Set image with applied snow filter
+    //Set image with applied snow filter
     private fun loadImage(snowFilterBitmap: Bitmap) {
         progressBar.visibility = View.GONE
         snowFilterImage.setImageBitmap(snowFilterBitmap)
