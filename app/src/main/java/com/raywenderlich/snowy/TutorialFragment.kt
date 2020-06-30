@@ -40,50 +40,76 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.raywenderlich.snowy.model.Tutorial
 import com.raywenderlich.snowy.utils.SnowFilter
+import kotlinx.android.synthetic.main.fragment_tutorial.*
 import kotlinx.coroutines.*
 import java.net.URL
 
 class TutorialFragment : Fragment() {
 
-  companion object {
+    companion object {
 
-    const val TUTORIAL_KEY = "TUTORIAL"
+        const val TUTORIAL_KEY = "TUTORIAL"
 
-    fun newInstance(tutorial: Tutorial): TutorialFragment {
-      val fragmentHome = TutorialFragment()
-      val args = Bundle()
-      args.putParcelable(TUTORIAL_KEY, tutorial)
-      fragmentHome.arguments = args
-      return fragmentHome
+        fun newInstance(tutorial: Tutorial): TutorialFragment {
+            val fragmentHome = TutorialFragment()
+            val args = Bundle()
+            args.putParcelable(TUTORIAL_KEY, tutorial)
+            fragmentHome.arguments = args
+            return fragmentHome
+        }
+
+      //Initiating a parent job
+        private val parentJob = Job()
+      //Defining the scope with main thread and parent job
+        private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob)
     }
 
-    private val parentJob = Job()
-    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob)
-  }
-
-  override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                            savedInstanceState: Bundle?): View? {
-    val tutorial = arguments?.getParcelable(TUTORIAL_KEY) as Tutorial
-    val view = inflater.inflate(R.layout.fragment_tutorial, container, false)
-    view.findViewById<TextView>(R.id.tutorialName).text = tutorial.name
-    view.findViewById<TextView>(R.id.tutorialDesc).text = tutorial.description
-    return view
-  }
-
-  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-    super.onViewCreated(view, savedInstanceState)
-    val tutorial = arguments?.getParcelable(TUTORIAL_KEY) as Tutorial
-  }
-
-  private fun getOriginalBitmapAsunc(tutorial: Tutorial) : Deferred<Bitmap> =
-    coroutineScope.async(Dispatchers.IO) {
-      URL(tutorial.url).openStream().use {
-        return@async BitmapFactory.decodeStream(it)
-      }
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val tutorial = arguments?.getParcelable(TUTORIAL_KEY) as Tutorial
+        val view = inflater.inflate(R.layout.fragment_tutorial, container, false)
+        view.findViewById<TextView>(R.id.tutorialName).text = tutorial.name
+        view.findViewById<TextView>(R.id.tutorialDesc).text = tutorial.description
+        return view
     }
 
-  private fun loadSnowFilterAsync(originalBitmap: Bitmap) : Deferred<Bitmap> =
-    coroutineScope.async(Dispatchers.Default) {
-      SnowFilter.applySnowEffect(originalBitmap)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val tutorial = arguments?.getParcelable(TUTORIAL_KEY) as Tutorial
+
+      //Launch: Implementing methods on Dispatcher.Main - used for UI-related events
+        coroutineScope.launch(Dispatchers.Main) {
+          //await() is a suspending function
+          //await() suspends launch until the methods return a value
+          //await() can only be called from withing a coroutine scope or another suspending function
+          //The green arrow in the next 2 lines indicate that these are suspension points
+            val originalBitmap = getOriginalBitmapAsync(tutorial).await()
+            val snowFilterBitmap = loadSnowFilterAsync(originalBitmap).await()
+            loadImage(snowFilterBitmap)
+        }
+    }
+
+  //Async: Gets executed on a worker thread
+  // Getting original bitmap on Dispatchers.IO - used for networking-related work
+    private fun getOriginalBitmapAsync(tutorial: Tutorial): Deferred<Bitmap> =
+        coroutineScope.async(Dispatchers.IO) {
+            URL(tutorial.url).openStream().use {
+                return@async BitmapFactory.decodeStream(it)
+            }
+        }
+
+  //Async: Gets executed on a worker thread
+  //Applying snow effect filter on Dispatcher.Default - user for CPU-intensive work
+    private fun loadSnowFilterAsync(originalBitmap: Bitmap): Deferred<Bitmap> =
+        coroutineScope.async(Dispatchers.Default) {
+            SnowFilter.applySnowEffect(originalBitmap)
+        }
+
+  //Set image with applied snow filter
+    private fun loadImage(snowFilterBitmap: Bitmap) {
+        progressBar.visibility = View.GONE
+        snowFilterImage.setImageBitmap(snowFilterBitmap)
     }
 }
