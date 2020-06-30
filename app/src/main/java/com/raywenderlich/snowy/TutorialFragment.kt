@@ -106,6 +106,13 @@ class TutorialFragment : Fragment() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        //Cancels and clears up all the coroutines launched with the coroutinesScope
+        parentJob.cancel()
+        //Once a job is cancelled, it cannot be reused. Need to create a new one
+    }
+
     //Async: Gets executed on a worker thread
     // Getting original bitmap on Dispatchers.IO - used for networking-related work
     private fun getOriginalBitmapAsync(tutorial: Tutorial): Deferred<Bitmap> =
